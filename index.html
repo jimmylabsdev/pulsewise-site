@@ -17,6 +17,126 @@
 
   <link rel="icon" type="image/png" href="/images/icon.png">
   <link rel="apple-touch-icon" href="/images/icon.png">
+
+  <style>
+    /* Beta signup modal — scoped styles, palette matches site */
+    .beta-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 31, 46, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.25rem;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+    .beta-modal-backdrop.is-open {
+      display: flex;
+      opacity: 1;
+    }
+    .beta-modal {
+      background: #faf8f3;
+      color: #1a1f2e;
+      border-radius: 14px;
+      max-width: 440px;
+      width: 100%;
+      padding: 2rem 1.75rem 1.75rem;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(26, 31, 46, 0.25);
+      font-family: 'Inter Tight', sans-serif;
+      transform: translateY(8px);
+      transition: transform 220ms ease;
+    }
+    .beta-modal-backdrop.is-open .beta-modal {
+      transform: translateY(0);
+    }
+    .beta-modal h3 {
+      font-family: 'Fraunces', serif;
+      font-weight: 500;
+      font-size: 1.5rem;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    .beta-modal p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0 0 1.25rem;
+      color: #1a1f2e;
+      opacity: 0.75;
+    }
+    .beta-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.9rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: #1a1f2e;
+      opacity: 0.5;
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+    }
+    .beta-modal-close:hover { opacity: 1; }
+    .beta-modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .beta-modal-form input[type="email"] {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid rgba(26, 31, 46, 0.2);
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1f2e;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+    .beta-modal-form input[type="email"]:focus {
+      border-color: #d67560;
+    }
+    .beta-modal-form button {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.85rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #d67560;
+      color: #faf8f3;
+      cursor: pointer;
+      transition: background 150ms ease, opacity 150ms ease;
+    }
+    .beta-modal-form button:hover { background: #c26551; }
+    .beta-modal-form button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .beta-modal-message {
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      min-height: 1.25rem;
+      line-height: 1.4;
+    }
+    .beta-modal-message.is-error { color: #b84a3a; }
+    .beta-modal-message.is-success { color: #2e7a5a; }
+    /* Honeypot — hidden from humans, visible to bots */
+    .beta-hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
 
@@ -40,8 +160,8 @@
           <p class="tagline reveal">A blood pressure companion</p>
           <h1 class="reveal">Smarter BP.<br><em>Better health.</em></h1>
           <p class="lead reveal">Speak your reading. Watch your trends. Keep everything where it belongs — on your device, never anywhere else.</p>
-          <a href="mailto:pulsewise@vigshrav.com?subject=Notify%20me%20when%20PulseWise%20launches" class="cta reveal">Launching Soon</a>
-          <span class="cta-note reveal">Coming soon at a store near you</span>
+          <button type="button" id="beta-open" class="cta reveal">Join the beta</button>
+          <span class="cta-note reveal">Leave your GMail id and we'll send you the Play Store testing link.</span>
         </div>
 
         <div class="hero-visual reveal">
@@ -151,6 +271,112 @@
       </span>
     </div>
   </footer>
+
+  <!-- Beta signup modal -->
+  <div class="beta-modal-backdrop" id="beta-backdrop" role="dialog" aria-modal="true" aria-labelledby="beta-title" aria-hidden="true">
+    <div class="beta-modal">
+      <button type="button" class="beta-modal-close" id="beta-close" aria-label="Close">×</button>
+      <h3 id="beta-title">Join the PulseWise beta</h3>
+      <p>Drop your GMAIL id and we'll send you the Play Store testing link. You'll be among the first to try it.</p>
+      <div class="beta-modal-form">
+        <input type="email" id="beta-email" placeholder="you@gmail.com" autocomplete="email" required>
+        <!-- Honeypot: bots fill this, humans don't see it -->
+        <input type="text" class="beta-hp" id="beta-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="button" id="beta-submit">Count me in</button>
+        <div class="beta-modal-message" id="beta-message" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var WEBHOOK_URL = 'https://hook.eu2.make.com/7fxkh64ee25ur3agog2eafsufpr4bg95';
+
+      var backdrop = document.getElementById('beta-backdrop');
+      var openBtn  = document.getElementById('beta-open');
+      var closeBtn = document.getElementById('beta-close');
+      var submit   = document.getElementById('beta-submit');
+      var input    = document.getElementById('beta-email');
+      var hp       = document.getElementById('beta-hp');
+      var msg      = document.getElementById('beta-message');
+
+      function openModal() {
+        backdrop.classList.add('is-open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        setTimeout(function () { input.focus(); }, 50);
+      }
+      function closeModal() {
+        backdrop.classList.remove('is-open');
+        backdrop.setAttribute('aria-hidden', 'true');
+        msg.textContent = '';
+        msg.className = 'beta-modal-message';
+      }
+
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) closeModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && backdrop.classList.contains('is-open')) closeModal();
+      });
+
+      function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      }
+
+      function showMessage(text, type) {
+        msg.textContent = text;
+        msg.className = 'beta-modal-message' + (type ? ' is-' + type : '');
+      }
+
+      submit.addEventListener('click', function () {
+        var email = input.value.trim();
+
+        // Honeypot — silently pretend success so bots don't retry
+        if (hp.value) {
+          showMessage("Thanks! We'll be in touch soon.", 'success');
+          input.value = '';
+          return;
+        }
+
+        if (!isValidEmail(email)) {
+          showMessage('Please enter a valid email address.', 'error');
+          return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = 'Sending…';
+        showMessage('', '');
+
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            timestamp: new Date().toISOString(),
+            source: 'pulsewise.vigshrav.com'
+          })
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('Network response was not ok');
+            showMessage("You're on the list. We'll send the testing link shortly.", 'success');
+            input.value = '';
+          })
+          .catch(function () {
+            showMessage('Something went wrong. Please try again or email us directly.', 'error');
+          })
+          .finally(function () {
+            submit.disabled = false;
+            submit.textContent = 'Count me in';
+          });
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') submit.click();
+      });
+    })();
+  </script>
 
 </body>
 </html>
