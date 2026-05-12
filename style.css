@@ -370,3 +370,35 @@ section h2 { margin-top: 0; margin-bottom: 2rem; }
   box-shadow: 0 8px 32px rgba(214, 117, 96, 0.18), 0 2px 8px rgba(26, 31, 46, 0.08);
   display: block;
 }
+
+/* ---------- Reference Docs ---------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: var(--ink-muted);
+  border: none;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+.footer-links {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.footer-links ul {
+  padding-left: 1.2rem;
+  margin-top: 1rem;
+}
+
+.footer-links li {
+  margin-bottom: 0.8rem;
+}
+
+.policy .lead {
+  margin-bottom: 2rem;
+}
